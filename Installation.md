@@ -1,4 +1,4 @@
-#Geant4 Installation 安装
+# Geant4 Installation 安装
 
 This document is an index on how to install Geant4 and related softwares in a new Mac or Linux. You can both scan [geant4 official guide](https://geant4.web.cern.ch/support/getting_started) and this document before any operations. Note, use international operation system instead of localized versions because I met problem when using Ubuntu Kylin.  If you owns a Windows computer, I suggest you install a virtual machine at first, then run Geant4 in it. 
 
