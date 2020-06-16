@@ -13,14 +13,14 @@ Guide 教程: https://agenda.infn.it/getFile.py/access?contribId=12&resId=0&mate
 ## For Mac, install Xcode
 ## 仅对于Mac, 安装 Xcode
 
-Find Xcode in your App Store, make sure there's enough space in your disk, then lie on your bed and have a nice dream. It takes more than an hour or more time for the installation to be done. 
+Find Xcode in your App Store, make sure there's enough space in your disk, then lie on your bed and have a nice dream. It takes more than an hour for the installation to be done, actually it took me an afternoon and a night due to poor internet connection. 
 
-在苹果商店里找到Xcode，确认你的硬盘空间足够，然后回家睡一觉。安装时间在1小时以上。
+在苹果商店里找到Xcode，确认你的硬盘空间足够，然后回家睡一觉。安装时间在1小时以上，实际上我装了一个下午+晚上。
 
 ## If you need a visualization, install QT5 
 ## 如果你需要可视化，安装QT5
 
-If you need to see how the physical process works, which I strongly recommend since you can check whether it's correct, you need a visulation. There are several visulization tools in fact, but according to official document, QT is the most general one, that was why I chose it. QT4 is no longer supported, you can only download QT5 from official website. You'd better try QT5 first. But I'll show how to install QT4 later. 
+If you need to see how the physical process works, which I strongly recommend since you can check whether it's correct, you need a visualization. There are several visualization tools in fact, but according to official document, QT is the most general one, that was why I chose it. QT4 is no longer supported, you can only download QT5 from official website. You'd better try QT5 first. But I'll show how to install QT4 later. 
 
 如果你需要看到物理过程的运行情况，你需要安装可视化工具。我建议安装，因为这样你可以确认物理过程是否正确。Geant4有很多的可视化工具，但是官方文档显示QT是通用的，所以我选择QT。QT4已经停止更新，所以我建议大家首先安装QT5，但是我还是把QT4安装方法写在下面。
 
@@ -49,9 +49,9 @@ https://stackoverflow.com/questions/20381128/how-to-install-homebrew-on-os-x
 ## For Mac, XQUARTZ
 ## 对于MAC，安装XQUARTZ
 
-XQUARTZ is included in old mac , but not in newer one (at least High Seirra).
+XQUARTZ is included in old mac , but not in newer one (at least High Seirra and later versions).
 
-XQUARTZ 在老的mac里面有，新的（至少High Seirra）里没有。
+XQUARTZ 在老的mac里面有，新的（至少High Seirra以及之后的）里没有。
 
 Official Site 官网： https://www.xquartz.org
 
