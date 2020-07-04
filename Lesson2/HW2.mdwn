@@ -1,0 +1,62 @@
+## Homework 2, 2020.7.4
+### Geometry I 
+
+-----
+
+
+##### 1 Construct two boxes in Geant4. 在Geant4 中画两个盒子。
+
+![alt text](p1.png)
+
+Box1: Size 0.5cm * 1m * 1m, vaccuum, its centre is located at (-20,0,0) m. 
+
+盒子1: 尺寸0.5cm * 1m * 1m，真空，中心位于(-20,0,0) m。
+
+Box2: Size 1mm * 5m * 5m, made of Iridium, its centre is located at (0,0,0) .
+
+盒子2: 尺寸 1mm * 5m * 5m，材料为铱，中心在(0,0,0)。 
+
+Note: The definition of Iridium is
+
+```
+ G4Material* Ir = new G4Material("Iridium",77.,192.217*g/mole,22.56*g/cm3);
+```
+
+The definition of vaccuum is
+
+```
+  G4Material * vacuum = new G4Material("Vacuum", 1.0 , 1.01*g/mole, 1.0E-25*g/cm3,kStateGas, 2.73*kelvin, 3.0E-18*pascal );
+```
+
+Shortcut 捷径：
+Copy examples/basic/B1,  复制B1例子，在 src/B1DetectorConstruction.cc 中直接改。
+
+
+---
+
+##### 2 Build a micro pore 制造一个微孔  
+
+![alt text](p2.png)
+
+This micro pore consists of 8 parts. 4 glass walls outside and 4 Iridium walls inside. 一个孔由8个部件组成，周围4个玻璃几何体，里面4个铱几何体。
+
+Size 尺寸： 外周 $100 \times 100 \, \mathrm{\mu m}$, 内周 $80\times 80 \, \mathrm{\mu m}$, 铱膜厚度 $50 \, \mathrm{nm}$. 孔长度 $4 \, \mathrm{m m}$.
+
+---
+
+Issue date: 2020.7.4
+
+ 2020年7月10日晚8点前提交 Geant4 可视化截图（如第一张图) 与 DetectorConstruction.cc 至 huzhensong@smail.nju.edu.cn 
+
+ 有问题欢迎讨论！
+
+
+
+
+
+
+
+
+
+
+
