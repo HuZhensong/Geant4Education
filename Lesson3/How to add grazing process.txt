@@ -1,0 +1,237 @@
+How to add grazing process:
+
+1 copy all the files to include and src
+
+2 PhysicsList.cc:
+  2.1 add header 
+      #include "G4XrayGrazingAngleScattering.hh" 
+      #include "G4gamma.hh"
+
+  2.2 add a line in the function
+void XrayTelPhysicsList::ConstructProcess()
+{
+  // Transportation, electromagnetic and general processes 
+  AddTransportation();
+  ConstructEM();
+  ConstructGeneral();
+  ConstructXrayGrazing(); /////add this line
+}
+
+  2.3 add the whole function
+void XrayTelPhysicsList::ConstructXrayGrazing()
+{
+  G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
+  G4ParticleDefinition* particle = particleTable->FindParticle("gamma");
+  G4ProcessManager* pmanager = particle->GetProcessManager();
+  G4String particleName = particle->GetParticleName();
+    
+  const G4int xray_verbosity = 1;
+  const G4double xray_intensity_threshold = 1e-5; // if xray_mode = intesity, photons below this threshold are dropped.
+  G4XrayGrazingAngleScattering::photon_mode_t xray_mode = G4XrayGrazingAngleScattering::particle;
+  pmanager->AddDiscreteProcess(new G4XrayGrazingAngleScattering(xray_verbosity, xray_intensity_threshold, xray_mode));
+}
+
+
+3 PhysicsList.hh
+add a line
+class PhysicsList:public PhysicsList
+{
+protected:
+  void ConstructGeneral();
+  void ConstructEM();
+  void ConstructXrayGrazing();//add this line
+}
+
+
+4  Add material.dat file of all the materials in build directory, find the data here http://henke.lbl.gov/optical_constants/getadb2.html  
+Note that in this website, it's order is energy, delta, beta, but in G4XrayRefractionIndex, the reading order is energy, beta, delta, note to change either order.
+
+5 G4XrayGrazingAngleScattering.cc
+line 465, g is used for gram, so it should be changed here.
+
+  const G4double gg = sqrt(sqr(c) + sqr(2*n*k));
+  const G4double a2 = 0.5*(gg+c);
+  const G4double a = sqrt(a2);
+  const G4double b2 = 0.5*(gg-c);
+
+6 Original .cc file should be added with some of the lines.
+  6.1 After G4RunManager* runManager = new G4RunManager;  add
+      const G4double micro_roughness = 1*nm;
+      const G4bool force_unit_reflectivity = false;
+      const G4double energy  // if necessary
+      const G4double angle   // if necessary
+      G4XraySpecularReflectingSurface * xray_surface_property = new G4XraySpecularReflectingSurface("TargetSiliconSurface", micro_roughness, force_unit_reflectivity);
+      runManager->SetUserInitialization(new ExXRTG4DetectorConstruction(xray_surface_property));
+      runManager->SetUserAction(new ExXRTG4PrimaryGeneratorAction(energy, angle)); // if necessary
+
+   6.2 Add #include "G4XraySpecularReflectingSurface.hh" to header
+
+
+7  Alter DetectorConstruction.cc
+   7.1  Add following line before the last return of DetectorConstruction.cc
+        new G4LogicalSkinSurface("TargetGoldSurface", MirrorAuCoatingLogicalVolume ,xray_surface_property)
+
+   7.2  Change theDetectorCOnstruction:DetectorConstruction(){} to 
+        ExXRTG4DetectorConstruction::ExXRTG4DetectorConstruction(G4XraySpecularReflectingSurface * property)
+  : G4VUserDetectorConstruction(), xray_surface_property(property) {}
+   
+   7.3 Add #include "G4LogicalSkinSurface.hh"
+   #include "G4XraySpecularReflectingSurface.hh" to header
+
+
+8  Alter DetectorContruction.hh
+   8.1  Add  class G4XraySpecularReflectingSurface;
+   8.2  Change  ExXRTG4DetectorConstruction(G4XraySpecularReflectingSurface *);
+   8.3  Add 
+       in class DetectorCOnstruction: G4VUserDetectorConstruction{  private:
+  G4XraySpecularReflectingSurface * xray_surface_property;
+
+
+
+
+
+//..............ooo000OOO000ooo......... The next steps are added for track the xray photons. But it's necessary for the completion of the whole process.
+
+
+9  main.cc
+   9.1 Add to header
+       #include "ExXRTG4SteppingAction.hh"
+       #include "ExXRTG4UserTrackingAction.hh"
+   9.2 Add next two lines before runManager->Initialize();
+  runManager->SetUserAction(new ExXRTG4SteppingAction);  // Someimes this line is included in initialization.cc, in this case it should be not added.
+  runManager->SetUserAction(new ExXRTG4UserTrackingAction); //This one is necessary!
+ 
+
+10 SteppingAction.cc
+   10.1 Add to header
+        #include "G4XrayUserEventInformation.hh"
+        #include "G4XrayUserTrackInformation.hh"
+   10.2 Add the following lines in void STeppingAction::UserSteppingAction(const G4Step* step)
+
+        G4XrayUserTrackInformation * track_info = dynamic_cast<G4XrayUserTrackInformation *>(track->GetUserInformation())
+  const std::vector<G4XrayUserTrackInformation::interaction_data_t> & data = track_info->GetTrackInformation();
+
+  G4cout << "Stepping action: "
+	 << "\n track=" << track->GetTrackID()
+	 << "\n volume=" << track->GetVolume()->GetName()
+	 << "\n track info records so far=" << data.size()
+	 << G4endl;
+  for(size_t k = 0; k != data.size(); ++k){
+    const G4XrayUserTrackInformation::interaction_data_t & idata = data[k];
+    G4cout << "\n interaction=" << k
+	   << "\n status=" << idata.status
+	   << "\n reflectivity=" << idata.reflectivity
+	   << "\n position=" << idata.position
+	   << "\n normal=" << idata.originalNormal
+	   << G4endl;
+  }
+
+
+11 SteppingAction.hh
+   Seem to be no change.
+
+12 UserTrackingInformation.hh
+   The whole txt is:
+   #ifndef XrayTelUSERTRACKINGACTION_HH
+#define XrayTelUSERTRACKINGACTION_HH 1
+
+#include "G4UserTrackingAction.hh"
+
+class XrayTelUserTrackingAction : public G4UserTrackingAction {
+public:
+  XrayTelUserTrackingAction();
+  ~XrayTelUserTrackingAction();
+  void PreUserTrackingAction(const G4Track *);
+
+};
+#endif
+
+13 UserTrackingAtion.cc
+   The whole txt is:
+   #include "XrayTelUserTrackingAction.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4PhysicalConstants.hh"
+#include "G4XrayUserTrackInformation.hh"
+#include "G4Track.hh"
+#include "G4EventManager.hh"
+#include "G4TrackingManager.hh"
+
+XrayTelUserTrackingAction::XrayTelUserTrackingAction() : G4UserTrackingAction() {}
+
+XrayTelUserTrackingAction::~XrayTelUserTrackingAction() {}
+
+void XrayTelUserTrackingAction::PreUserTrackingAction(const G4Track * aTrack) {
+  G4TrackingManager * tman = G4EventManager::GetEventManager()->GetTrackingManager();
+  G4XrayUserTrackInformation * uti = new G4XrayUserTrackInformation;
+  G4XrayUserTrackInformation::interaction_data_t track_info_data;
+  track_info_data.status = G4XrayUserTrackInformation::just_started;
+  track_info_data.position = aTrack->GetVertexPosition();
+  track_info_data.incidentDirection = aTrack->GetVertexMomentumDirection();
+  track_info_data.reflectedDirection = aTrack->GetMomentumDirection();
+  track_info_data.intensity = aTrack->GetWeight();
+  track_info_data.volume = aTrack->GetVolume();
+  uti->AddInformation(track_info_data);
+  tman->SetUserTrackInformation(uti);   
+ }
+
+14 UserEventAction.cc
+   The whole txt is:
+    
+#include "XrayTelUserEventAction.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4PhysicalConstants.hh"
+#include "G4XrayUserEventInformation.hh"
+#include "G4Event.hh"
+#include "G4ParticleGun.hh"
+#include "G4ParticleTable.hh"
+#include "G4ParticleDefinition.hh"
+#include "globals.hh"
+
+
+XrayTelUserEventAction::XrayTelUserEventAction() : G4UserEventAction() {}
+
+XrayTelUserEventAction::~XrayTelUserEventAction() {}
+
+//void ExXRTG4UserEventAction::BeginOfEventAction(const G4Event * anEvent) {
+void XrayTelUserEventAction::BeginOfEventAction(const G4Event * anEvent) {
+ 
+ //   anEvent->SetUserInformation(new G4XrayUserEventInformation); 
+// anEvent->SetUserInformation(new G4XrayUserEventInformation );
+}
+
+//void ExXRTG4UserEventAction::EndOfEventAction(const G4Event *) 
+
+void XrayTelUserEventAction::EndOfEventAction(const G4Event *){
+  
+}
+
+15 UserEventAction.hh
+   This file is showed in the following.
+   #ifndef XrayTelUserEventAction_hh
+#define XrayTelUserEventAction_hh 1
+
+#include "G4UserEventAction.hh"
+
+class G4Event;
+
+class  XrayTelUserEventAction : public G4UserEventAction {
+public:
+  XrayTelUserEventAction();
+  virtual ~XrayTelUserEventAction();
+//~ExXRTG4UserEventAction();
+
+  virtual void BeginOfEventAction(const G4Event *);
+  virtual void EndOfEventAction(const G4Event *);
+//  virtual void BeginOfEventAction(const G4Event *);
+//  virtual void EndOfEventAction(const G4Event *);
+//
+};
+
+#endif 
+
+16 NOTE
+   .1 The threshold of x-ray particle is defined in PHysicsList.cc, void XrayTelPhysicsList::ConstructXrayGrazing(),  originally it's 1e-5.
+    Also, in G4XrayRefractionIndex, there's const G4double tolerance_check = 1e-5;
+
+
+

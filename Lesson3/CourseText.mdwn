@@ -1,0 +1,259 @@
+<!-- slide -->
+### Lesson 3 - A Simple Source, Total Internal Reflection, Spherical Geometry
+
+Hu Zhensong  
+2020.07.10
+
+<!-- slide -->
+### Homework 2 Review
+
+- world volume 是 geant4 中最基本的一个volume， 所有其它的volume都在它里面，所以world volume一定比任何volume大。 你可以定义一个长达100km world volume。 
+
+- 对于我们做X-ray的来说，请务必把所有的world volume 材料定义成 vaccum。 
+
+<!-- slide -->
+
+- mother volume， 指某几何体以这个mother volume 为参照物放置。 比如 “我在李老师身旁1m放个苹果”， 那么此时李老师就是 mother volume, 苹果是 daughter volume. （汉语里会讲父XX， 子XX， 英语里一开始也是 son volume, 我估计是美帝的政治正确所以讲 mother volume 和 daughter volume 括弧笑）
+
+<!-- slide -->
+
+- envelope volume是B1例子里自己定义的。没有普遍性。B1例子是模拟生物体的，所以evnelope被定义为一个充满水的box，模拟生物体环境。
+
+- envolope 显示蓝色的问题 >_>
+    - 每次显示可视化的时候会启动一个叫vis.mac的文件
+    - 在这个vis.mac文件中有一行命令： /vis/geometry/set/colour Envelope 0 0 0 1 .3     就让叫Envelope的几何体全部画成蓝色
+    - 要不让它显示蓝色，你可以删掉这行，也可以把envelope 改个名。
+
+
+
+<!-- slide -->
+
+- 玻璃定义有两种。二者等价。 
+
+- 陈酊存找到了一个内置的玻璃定义
+
+```
+   G4Material* SiO2 = nist->FindOrBuildMaterial
+   ("G4_SILICON_DIOXIDE");
+```
+
+<!-- slide -->
+
+
+- 另一种方法是基本的定义，首先定义一个叫Si的元素，然后定义一个叫O的元素，再定义一个叫SiO2的分子，里面有一个Si和一个O。
+
+```
+    G4Element* elSi = new G4Element(
+        "Silicon","Si",14,28.085*g/mole);
+    G4Element* elO = new G4Element(
+        "Oxygen","O",8,16.00*g/mole);
+    G4int ncomponents = 2;
+    G4double density = 2.200*g/cm3;
+    G4Material* SiO2 = new G4Material(
+        "SiO2",2.200*g/cm3,ncomponents);
+    G4int natoms;
+    SiO2->AddElement(elSi,natoms = 1);
+    SiO2->AddElement(elO,natoms=2);
+```
+
+
+
+
+<!-- slide -->
+### Create a simple source by General Particle Source(GPS)
+
+GPS is a tool for building complicated sources.
+
+![alt text](simple-source.png)
+
+
+
+
+<!-- slide -->
+- Create a file named test.mac in the building directory
+
+- Write the following code
+
+```
+/run/verbose 1
+/tracking/storeTrajectory 1
+/gps/particle gamma
+/gps/pos/type Plane
+/gps/pos/shape Square
+/gps/pos/rot1 0. 0. 1.
+/gps/pos/rot2 0. 1. 0.
+/gps/pos/halfx 1. cm
+/gps/pos/halfy 1. cm
+/gps/pos/centre 3. 0.3 0. m
+/gps/ang/type beam1d  # beam1d is a parallel light.
+/gps/ene/type Mono
+/gps/ene/mono 1000 eV
+
+/run/beamOn 100
+```
+<!-- slide -->
+- Then run it in command window with the following command
+
+```
+/control/execute test.mac
+```
+
+<!-- slide -->
+
+### Change the direction of the beam
+
+- There are two ways to make the beam focused on a single point.
+
+- Use /gps/ang/type focused. 
+
+```
+/gps/ang/type focused
+/gps/ang/focuspoint 0. 0. 0.
+```
+
+<!-- slide -->
+
+- Use angular rotation to rotate it to a single point. Below is the default rotation. The first line means x axis is (1,0,0). The second line means y axis is at (0,1,0).  You can calculate the rotation angle you want.
+
+```
+/gps/ang/rot1 1. 0. 0.
+/gps/ang/rot2 0. 1. 0.
+```
+
+
+<!-- slide -->
+### X-ray total internal reflection
+
+- There's no total internal reflection physics in Geant4
+
+- A Netherland company wrote an X-ray package called xrtg for Geant4-9.  I have been altered it to make it fit Geant4-10.
+
+- When using this package, you have to first contain the xray reflectivity in the build directory.  You can get data from https://henke.lbl.gov/optical_constants/getdb2.html
+
+<!-- slide -->
+
+- First include header in DetectorConstruction.cc 
+
+```
+#include "G4LogicalSkinSurface.hh"
+#include "G4XraySpecularReflectingSurface.hh"
+```
+
+- Then define the Xray skin surface.
+
+```
+new G4LogicalSkinSurface("TargetIrSurface",
+ LayerLogical,xray_surface_property);
+```
+
+<!-- slide -->
+
+### Spherical Geometry
+
+
+
+![sphere](sphere.png)
+
+
+<!-- slide -->
+
+- First include header
+
+```
+#include "G4Sphere.hh"
+```
+
+- To define a sphere, run the following code
+
+```
+  G4double rmin = 720.* mm;
+  G4double rmax = 750. * mm;
+  G4double Sphere1SPhi = 0.;  
+  // start phi angle, phi ranges [0,2*pi]
+  G4double Sphere1DPhi = 2.* pi ;  
+  // delta phi angle
+  G4double Sphere1STheta = 0.;  
+  // start theta angle, theta ranges [0,pi]
+  G4double Sphere1DTheta = pi ; 
+  // delta theta angle
+  G4VSolid* SphereSolid1 = new G4Sphere("SphereSolid",
+                    rmin,rmax,Sphere1SPhi,Sphere1DPhi,
+                    Sphere1STheta,Sphere1DTheta);
+  G4LogicalVolume* SphereLogical1 = new G4LogicalVolume(
+      SphereSolid1,Al,"SphereLogical");
+  new G4PVPlacement(0,
+        G4ThreeVector(0.*cm,0.*cm,0.*cm),
+        "SpherePhysical",
+        SphereLogical1,
+        physicalWorld,false,0);
+```
+
+<!-- slide -->
+
+- Draw a ring 
+
+```
+  G4double Sphere2SPhi = 0.;
+  G4double Sphere2DPhi = 2.* pi ;
+  G4double Sphere2STheta = 6*pi/12;
+  G4double Sphere2DTheta = pi/12 ;
+  G4VSolid* SphereSolid2 = new G4Sphere("SphereSolid",
+                rmin,rmax,Sphere2SPhi,Sphere2DPhi,
+                Sphere2STheta,Sphere2DTheta);
+  G4LogicalVolume* SphereLogical2 = 
+                new G4LogicalVolume(SphereSolid2,Al,
+                "SphereLogical");
+  new G4PVPlacement(0,G4ThreeVector(200.*cm,0.*cm,0.*cm),
+                "SpherePhysical",SphereLogical2,
+                physicalWorld,false,0);
+```
+
+<!-- slide -->
+
+- In Geant4, you would find that, actually, a sphere is made of several boxes. For example, the ring we made just now is made up of 24 boxes, each boxes has $\Delta \Phi =  15 ^\circ$.
+
+![ring1](ring1.png)
+
+<!-- slide -->
+
+- To make it smoother, we can use 100 boxes to make a ring.
+
+```
+  G4int i;
+  G4int part = 100;
+  G4double Sphere3SPhi = 0.;
+  G4double Sphere3DPhi = 2.* pi /part;
+  G4double Sphere3STheta = 6*pi/12;
+  G4double Sphere3DTheta = pi/12 ;
+  G4VSolid* SphereSolid3[part];
+  G4LogicalVolume* SphereLogical3[part];
+
+  for (i=0;i<part;i++){
+      Sphere3SPhi = i*Sphere3DPhi;
+      SphereSolid3[i] = new G4Sphere("SphereSolid",
+                    rmin,rmax,Sphere3SPhi,Sphere3DPhi,
+                    Sphere3STheta,Sphere3DTheta);
+      SphereLogical3[i] = new G4LogicalVolume(
+                    SphereSolid3[i],Al,"SphereLogical");
+      new G4PVPlacement(0,
+                    G4ThreeVector(400.*cm,0.*cm,0.*cm),
+                    "SpherePhysical",SphereLogical3[i],
+                    physicalWorld,false,0);
+  }
+```
+
+
+<!-- slide -->
+
+### Home work 3
+
+- 在share/examples/advanced/xray_telescope 基础上改。 
+
+- 如作业2第二题，制造一个微孔。微孔所有部件都在一个半径为 $750 \,\mathrm{mm}$ 的球体上，要求使用G4Sphere命令建立所有几何体。
+
+- 微孔长 $1.06 \,\mathrm{mm}$, 外周 $26 \,\mathrm{\mu m}$, 内周$20 \,\mathrm{\mu m}$， 铱膜厚 $20 \,\mathrm{nm}$. 
+
+- 设置一个光源，入射角极小，使之发生全反射。
+
+
+

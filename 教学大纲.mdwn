@@ -1,0 +1,13 @@
+## 教学大纲
+
+- Lesson 1, 2020.6.16, Overview of Geant4. 
+
+- Lesson 2, 2020.7.4 , Geometry 1. Learn how to use box.
+
+- Lesson 3, 2020.7.11, Geometry 2 + X-ray total internal reflection. 
+
+- Lesson 4, 2020.7.18, Geometry 3, build telescope. 
+
+- Lesson 5, 2020.7.25, make source. 
+
+- Lesson 6, 2020.8.1 , tracking.
